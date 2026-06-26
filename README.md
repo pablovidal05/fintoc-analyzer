@@ -19,6 +19,8 @@ Casi la mitad de tu plata son transferencias a personas.
 
 Funciona **sin pagar por IA** con un motor de reglas en español. Si tienes `ANTHROPIC_API_KEY`, el chat se convierte en coach conversacional con Claude real — preguntas abiertas, análisis de hábitos, consejos accionables.
 
+![Dashboard preview](docs/dashboard-preview.jpg)
+
 ---
 
 ## Bancos disponibles en Fintoc Chile
