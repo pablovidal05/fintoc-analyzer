@@ -1,0 +1,21 @@
+{
+  "name": "fintoc-analyzer",
+  "version": "0.1.0",
+  "description": "Analiza movimientos bancarios via API de Fintoc",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "widget": "node server.js",
+    "ask": "node ask.js",
+    "overview": "node overview.js",
+    "dashboard": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
+    "dotenv": "^16.4.5"
+  }
+}

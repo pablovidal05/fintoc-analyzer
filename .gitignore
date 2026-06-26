@@ -1,0 +1,22 @@
+# Secrets / env
+.env
+.env.local
+.env.*.local
+
+# Datos bancarios cacheados (reales)
+movements.json
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

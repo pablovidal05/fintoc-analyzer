@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mis Finanzas — Fintoc</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --bg: #0b0f17;
+        --card: #141b2a;
+        --card2: #1b2436;
+        --text: #e6ebf5;
+        --muted: #8a96ad;
+        --green: #34d399;
+        --red: #f87171;
+        --accent: #818cf8;
+        --border: #232d42;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .main { flex: 1; overflow-y: auto; padding: 28px; }
+      .chat {
+        width: 26%;
+        min-width: 330px;
+        max-width: 460px;
+        border-left: 1px solid var(--border);
+        background: var(--card);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      .chat.hidden { display: none; }
+      .chat .head { padding: 16px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+      .chat .head h2 { margin: 0; font-size: 15px; }
+      .chat .head .closeBtn { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 18px; padding: 0 2px; }
+      .chatToggle {
+        position: fixed; bottom: 22px; right: 22px; z-index: 50;
+        border-radius: 999px; padding: 13px 20px; border: 0; cursor: pointer;
+        background: var(--accent); color: #0b0f17; font-weight: 600; font-size: 14px;
+        box-shadow: 0 6px 18px rgba(0,0,0,.45);
+      }
+      .chatToggle.hidden { display: none; }
+      .chat .head p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+      .chat .msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+      .msg { max-width: 90%; padding: 10px 13px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+      .msg.user { align-self: flex-end; background: var(--accent); color: #0b0f17; }
+      .msg.bot { align-self: flex-start; background: var(--card2); border: 1px solid var(--border); }
+      .msg .tag { display: block; font-size: 10px; opacity: .6; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .04em; }
+      .chat .input { display: flex; gap: 8px; padding: 14px; border-top: 1px solid var(--border); }
+      .chat .input input {
+        flex: 1; background: var(--card2); color: var(--text);
+        border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; font-size: 13px;
+      }
+      .chat .input button { background: var(--accent); color: #0b0f17; border: 0; font-weight: 600; }
+      .chat .examples { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px; }
+      .chat .examples button { font-size: 11px; padding: 5px 9px; border-radius: 999px; }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      h1 { font-size: 22px; margin: 0; font-weight: 650; }
+      .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+      button {
+        background: var(--card2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        padding: 9px 16px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      button:hover { border-color: var(--accent); }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 18px 20px;
+      }
+      .kpi .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+      .kpi .value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+      .green { color: var(--green); }
+      .red { color: var(--red); }
+      .cols {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+      .card h2 { font-size: 14px; margin: 0 0 14px; font-weight: 600; color: var(--muted); }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+      th { color: var(--muted); font-weight: 500; }
+      td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--red); }
+      .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; font-size: 13px; }
+      .bar-row .name { width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .bar-track { flex: 1; background: var(--card2); border-radius: 6px; height: 16px; overflow: hidden; }
+      .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #c084fc); }
+      .bar-row .amt { width: 92px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+      .nudge {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        background: linear-gradient(135deg, rgba(129,140,248,.14), rgba(192,132,252,.08));
+        border: 1px solid var(--accent);
+        border-radius: 13px;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+      }
+      .nudge .nicon { font-size: 22px; line-height: 1.2; }
+      .nudge .nbody { flex: 1; }
+      .nudge .nbody strong { font-size: 14px; }
+      .nudge .nbody p { margin: 4px 0 10px; font-size: 13px; line-height: 1.5; color: var(--text); }
+      .nudge .naction { background: var(--accent); color: #0b0f17; border: 0; border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+      .nudge .ndismiss { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 15px; }
+      #copiloto { margin-bottom: 6px; }
+      #copiloto .pulse { font-size: 12px; color: var(--muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+      #copiloto .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); display: inline-block; }
+      .insight {
+        border-left: 3px solid var(--accent);
+        background: var(--card2);
+        padding: 11px 14px;
+        border-radius: 0 8px 8px 0;
+        font-size: 13px;
+        line-height: 1.5;
+        margin-bottom: 9px;
+      }
+      details.sec { background: var(--card); border: 1px solid var(--border); border-radius: 14px; margin-bottom: 14px; }
+      details.sec[hidden] { display: none; }
+      details.sec > summary { cursor: pointer; padding: 15px 20px; font-size: 15px; font-weight: 600; list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; user-select: none; }
+      details.sec > summary::-webkit-details-marker { display: none; }
+      details.sec > summary::after { content: "▾"; color: var(--muted); font-size: 13px; transition: transform .2s; }
+      details.sec:not([open]) > summary::after { transform: rotate(-90deg); }
+      details.sec > .secbody { padding: 0 18px 18px; }
+      .secbody .card { background: transparent; border: 0; padding: 0; }
+      .secbody .cols { gap: 22px; }
+      #loading { color: var(--muted); padding: 40px; text-align: center; }
+      canvas { max-height: 260px; }
+      .filtros {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 18px;
+        padding: 12px 14px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+      }
+      .filtros .preset {
+        padding: 7px 13px;
+        font-size: 13px;
+        border-radius: 8px;
+      }
+      .filtros .preset.active {
+        background: var(--accent);
+        color: #0b0f17;
+        border-color: var(--accent);
+        font-weight: 600;
+      }
+      .filtros .sep { width: 1px; height: 22px; background: var(--border); margin: 0 4px; }
+      .filtros label { color: var(--muted); font-size: 12px; }
+      .search {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 14px;
+      }
+      .search input {
+        flex: 1;
+        background: var(--card);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 11px;
+        padding: 12px 16px;
+        font-size: 14px;
+      }
+      .search input:focus { outline: none; border-color: var(--accent); }
+      .search button { padding: 11px 18px; border-radius: 11px; font-weight: 600; background: var(--accent); color: #0b0f17; border: 0; }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--card2);
+        border: 1px solid var(--accent);
+        color: var(--text);
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 13px;
+        margin-bottom: 14px;
+      }
+      .chip button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0; }
+      .filtros input[type="date"] {
+        background: var(--card2);
+        color: var(--text);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 6px 9px;
+        font-size: 13px;
+        color-scheme: dark;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="main">
+    <header>
+      <div>
+        <h1>Mis Finanzas</h1>
+        <div class="sub" id="periodo">Cargando…</div>
+      </div>
+      <button id="refresh">↻ Actualizar desde banco</button>
+    </header>
+
+    <div class="search">
+      <input id="searchInput" placeholder="🔎 Busca en lenguaje natural: 'gastos en super en marzo', 'uber este año', 'santa isabel'…" autocomplete="off" />
+      <button id="searchBtn">Buscar</button>
+    </div>
+    <span class="chip" id="searchChip" hidden></span>
+
+    <div class="filtros" id="filtros">
+      <button class="preset" data-preset="hoy">Hoy</button>
+      <button class="preset" data-preset="mes">Este mes</button>
+      <button class="preset" data-preset="anio">Este año</button>
+      <button class="preset active" data-preset="todo">Todo</button>
+      <span class="sep"></span>
+      <label>Desde <input type="date" id="from" /></label>
+      <label>Hasta <input type="date" id="to" /></label>
+      <button id="aplicar" class="preset">Aplicar</button>
+    </div>
+
+    <div id="loading">Cargando datos…</div>
+    <div id="app" hidden>
+      <div class="grid" id="kpis"></div>
+      <div class="grid" id="cuentas"></div>
+
+      <details class="sec" id="copiloto" hidden>
+        <summary><span><span class="dot"></span> 🛰️ Copiloto financiero <span id="nudgeCount" style="color:var(--muted);font-weight:400"></span></span></summary>
+        <div class="secbody"><div id="nudges"></div></div>
+      </details>
+
+      <details class="sec" id="habitosCard" open>
+        <summary>🧠 Tus hábitos de consumo</summary>
+        <div class="secbody">
+          <div id="insights"></div>
+          <div id="categorias" style="margin-top:16px"></div>
+        </div>
+      </details>
+
+      <details class="sec">
+        <summary>📊 Gráficos: ingresos, gastos y comercios</summary>
+        <div class="secbody">
+          <div class="cols">
+            <div class="card">
+              <h2>Ingresos vs Gastos por mes</h2>
+              <canvas id="chartMes"></canvas>
+            </div>
+            <div class="card">
+              <h2>En qué gastas más</h2>
+              <div id="comercios"></div>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="sec">
+        <summary>💸 Tendencia y mayores gastos</summary>
+        <div class="secbody">
+          <div class="cols">
+            <div class="card">
+              <h2>Gasto neto por mes</h2>
+              <canvas id="chartNeto"></canvas>
+            </div>
+            <div class="card">
+              <h2>Gastos más grandes</h2>
+              <table id="topGastos"><tbody></tbody></table>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
+    </main>
+
+    <aside class="chat">
+      <div class="head">
+        <div>
+          <h2>💬 Pregúntale a tus finanzas</h2>
+          <p id="chatModo">reglas + IA</p>
+        </div>
+        <button class="closeBtn" id="chatHide" title="Ocultar chat">✕</button>
+      </div>
+      <div class="msgs" id="msgs">
+        <div class="msg bot">Hola 👋 Soy tu coach financiero. Pregúntame por tus hábitos de consumo, en qué se te va la plata, o pídeme consejos. También puedo hacerte preguntas para entender mejor.</div>
+      </div>
+      <div class="examples" id="examples">
+        <button>¿cómo son mis hábitos de consumo?</button>
+        <button>¿en qué estoy gastando de más?</button>
+        <button>¿dónde puedo ahorrar?</button>
+        <button>analiza mis gastos de este año</button>
+      </div>
+      <div class="input">
+        <input id="chatInput" placeholder="Escribe tu pregunta…" autocomplete="off" />
+        <button id="chatSend" class="preset">Enviar</button>
+      </div>
+    </aside>
+    <button class="chatToggle hidden" id="chatToggle">💬 Chat</button>
+
+    <script>
+      const clp = (n) => "$" + new Intl.NumberFormat("es-CL").format(Math.round(n));
+      const charts = {};
+      let filtro = { from: null, to: null }; // filtro activo
+
+      const iso = (d) => d.toISOString().slice(0, 10);
+
+      function presetRango(preset) {
+        const hoy = new Date();
+        if (preset === "hoy") return { from: iso(hoy), to: iso(hoy) };
+        if (preset === "mes")
+          return { from: iso(new Date(hoy.getFullYear(), hoy.getMonth(), 1)), to: iso(hoy) };
+        if (preset === "anio")
+          return { from: iso(new Date(hoy.getFullYear(), 0, 1)), to: iso(hoy) };
+        return { from: null, to: null }; // todo
+      }
+
+      async function load({ refresh = false } = {}) {
+        document.getElementById("loading").hidden = false;
+        document.getElementById("app").hidden = true;
+        const qs = new URLSearchParams();
+        if (refresh) qs.set("refresh", "1");
+        if (filtro.from) qs.set("from", filtro.from);
+        if (filtro.to) qs.set("to", filtro.to);
+        const r = await fetch("/api/data?" + qs.toString());
+        const d = await r.json();
+        if (d.error) {
+          document.getElementById("loading").textContent = "Error: " + d.error;
+          return;
+        }
+        render(d);
+      }
+
+      function render(d) {
+        document.getElementById("loading").hidden = true;
+        document.getElementById("app").hidden = false;
+        document.getElementById("periodo").textContent = d.nMovs
+          ? `${d.desde} → ${d.hasta} · ${d.nMovs} movimientos`
+          : "Sin movimientos en este rango";
+
+        // KPIs
+        const saldo = d.cuentas.reduce((s, c) => s + c.disponible, 0);
+        document.getElementById("kpis").innerHTML = `
+          <div class="card kpi"><div class="label">Saldo disponible</div><div class="value">${clp(saldo)}</div></div>
+          <div class="card kpi"><div class="label">Ingresos</div><div class="value green">${clp(d.ingresos)}</div></div>
+          <div class="card kpi"><div class="label">Gastos</div><div class="value red">${clp(d.gastos)}</div></div>
+          <div class="card kpi"><div class="label">Neto</div><div class="value ${d.neto >= 0 ? "green" : "red"}">${clp(d.neto)}</div></div>
+        `;
+
+        // Cuentas
+        document.getElementById("cuentas").innerHTML = d.cuentas
+          .map(
+            (c) => `<div class="card kpi"><div class="label">${c.name} · ${c.number}</div>
+            <div class="value">${clp(c.disponible)}</div>
+            <div class="sub">contable ${clp(c.contable)}</div></div>`
+          )
+          .join("");
+
+        // Copiloto proactivo (nudges)
+        const copiloto = document.getElementById("copiloto");
+        if (d.nudges && d.nudges.length) {
+          document.getElementById("nudges").innerHTML = d.nudges
+            .map(
+              (n) => `<div class="nudge">
+                <span class="nicon">${n.icon}</span>
+                <div class="nbody"><strong>${n.title}</strong><p>${n.message}</p>
+                  ${n.action ? `<button class="naction" data-q="${n.query}">${n.action}</button>` : ""}</div>
+                <button class="ndismiss" title="Descartar">✕</button>
+              </div>`
+            )
+            .join("");
+          copiloto.hidden = false;
+          document.getElementById("nudgeCount").textContent = `(${d.nudges.length})`;
+          copiloto.querySelectorAll(".naction").forEach((b) =>
+            b.addEventListener("click", () => search(b.dataset.q))
+          );
+          copiloto.querySelectorAll(".ndismiss").forEach((b) =>
+            b.addEventListener("click", (e) => e.target.closest(".nudge").remove())
+          );
+        } else {
+          copiloto.hidden = true;
+        }
+
+        // Hábitos (insights + categorías)
+        if (d.habitos) {
+          document.getElementById("insights").innerHTML = d.habitos.insights
+            .map((t) => `<div class="insight">💡 ${t}</div>`)
+            .join("");
+          const maxc = d.habitos.categorias[0]?.total || 1;
+          document.getElementById("categorias").innerHTML = d.habitos.categorias
+            .map(
+              (c) => `<div class="bar-row">
+                <span class="name">${c.name}</span>
+                <span class="bar-track"><span class="bar-fill" style="width:${(c.total / maxc) * 100}%"></span></span>
+                <span class="amt">${clp(c.total)} · ${c.pct.toFixed(0)}%</span>
+              </div>`
+            )
+            .join("");
+          document.getElementById("habitosCard").hidden = false;
+        } else {
+          document.getElementById("habitosCard").hidden = true;
+        }
+
+        // Comercios (barras)
+        const max = d.porComercio[0]?.total || 1;
+        document.getElementById("comercios").innerHTML = d.porComercio
+          .slice(0, 12)
+          .map(
+            (c) => `<div class="bar-row">
+              <span class="name" title="${c.nombre}">${c.nombre}</span>
+              <span class="bar-track"><span class="bar-fill" style="width:${(c.total / max) * 100}%"></span></span>
+              <span class="amt">${clp(c.total)}</span>
+            </div>`
+          )
+          .join("");
+
+        // Top gastos
+        document.querySelector("#topGastos tbody").innerHTML = d.topGastos
+          .map(
+            (g) => `<tr><td>${g.fecha}</td><td>${g.descripcion}</td><td class="num">${clp(g.monto)}</td></tr>`
+          )
+          .join("");
+
+        // Charts (destruir previos para poder recargar)
+        const meses = d.porMes.map((m) => m.mes);
+        charts.mes?.destroy();
+        charts.mes = new Chart(document.getElementById("chartMes"), {
+          type: "bar",
+          data: {
+            labels: meses,
+            datasets: [
+              { label: "Ingresos", data: d.porMes.map((m) => m.ingresos), backgroundColor: "#34d399" },
+              { label: "Gastos", data: d.porMes.map((m) => m.gastos), backgroundColor: "#f87171" },
+            ],
+          },
+          options: chartOpts(),
+        });
+        charts.neto?.destroy();
+        charts.neto = new Chart(document.getElementById("chartNeto"), {
+          type: "line",
+          data: {
+            labels: meses,
+            datasets: [
+              {
+                label: "Neto",
+                data: d.porMes.map((m) => m.ingresos - m.gastos),
+                borderColor: "#818cf8",
+                backgroundColor: "rgba(129,140,248,.15)",
+                fill: true,
+                tension: 0.3,
+              },
+            ],
+          },
+          options: chartOpts(),
+        });
+      }
+
+      function chartOpts() {
+        return {
+          responsive: true,
+          plugins: { legend: { labels: { color: "#8a96ad" } } },
+          scales: {
+            x: { ticks: { color: "#8a96ad" }, grid: { color: "#232d42" } },
+            y: {
+              ticks: { color: "#8a96ad", callback: (v) => "$" + (v / 1000) + "k" },
+              grid: { color: "#232d42" },
+            },
+          },
+        };
+      }
+
+      function setActive(preset) {
+        document.querySelectorAll(".preset[data-preset]").forEach((b) =>
+          b.classList.toggle("active", b.dataset.preset === preset)
+        );
+      }
+
+      // Presets
+      document.querySelectorAll(".preset[data-preset]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          filtro = presetRango(btn.dataset.preset);
+          document.getElementById("from").value = filtro.from || "";
+          document.getElementById("to").value = filtro.to || "";
+          document.getElementById("searchChip").hidden = true;
+          setActive(btn.dataset.preset);
+          load();
+        });
+      });
+
+      // Rango personalizado
+      document.getElementById("aplicar").addEventListener("click", () => {
+        filtro = {
+          from: document.getElementById("from").value || null,
+          to: document.getElementById("to").value || null,
+        };
+        setActive(null);
+        load();
+      });
+
+      document.getElementById("refresh").addEventListener("click", () => load({ refresh: true }));
+
+      // Acordeón: al abrir una sección, redibuja los gráficos (si estaban colapsados rendían en 0px)
+      document.querySelectorAll("details.sec").forEach((s) => {
+        s.addEventListener("toggle", () => {
+          if (s.open) {
+            charts.mes && charts.mes.resize();
+            charts.neto && charts.neto.resize();
+          }
+        });
+      });
+
+      load();
+
+      // ---- Búsqueda en lenguaje natural (filtra el dashboard) ----
+      const searchInput = document.getElementById("searchInput");
+      const searchChip = document.getElementById("searchChip");
+
+      async function search(question) {
+        if (!question.trim()) return;
+        document.getElementById("loading").hidden = false;
+        document.getElementById("app").hidden = true;
+        try {
+          const r = await fetch("/api/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ question }),
+          });
+          const d = await r.json();
+          if (d.error) throw new Error(d.error);
+          render(d);
+          searchChip.hidden = false;
+          searchChip.innerHTML = `Filtro: ${d.label} `;
+          const x = document.createElement("button");
+          x.textContent = "✕";
+          x.onclick = clearSearch;
+          searchChip.appendChild(x);
+          setActive(null);
+        } catch (e) {
+          document.getElementById("loading").textContent = "Error: " + e.message;
+        }
+      }
+
+      function clearSearch() {
+        searchChip.hidden = true;
+        searchInput.value = "";
+        filtro = { from: null, to: null };
+        setActive("todo");
+        load();
+      }
+
+      document.getElementById("searchBtn").addEventListener("click", () => search(searchInput.value));
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") search(searchInput.value);
+      });
+
+      // ---- Mostrar/ocultar chat ----
+      const chatPanel = document.querySelector(".chat");
+      const chatToggleBtn = document.getElementById("chatToggle");
+      function setChat(visible) {
+        chatPanel.classList.toggle("hidden", !visible);
+        chatToggleBtn.classList.toggle("hidden", visible);
+      }
+      document.getElementById("chatHide").addEventListener("click", () => setChat(false));
+      chatToggleBtn.addEventListener("click", () => setChat(true));
+
+      // ---- Chat ----
+      const msgs = document.getElementById("msgs");
+      const chatInput = document.getElementById("chatInput");
+
+      function addMsg(text, cls, tag) {
+        const div = document.createElement("div");
+        div.className = "msg " + cls;
+        if (tag) {
+          const t = document.createElement("span");
+          t.className = "tag";
+          t.textContent = tag;
+          div.appendChild(t);
+        }
+        div.appendChild(document.createTextNode(text));
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        return div;
+      }
+
+      const chatHistory = []; // [{role, content}, ...] para conversación multi-turno
+
+      async function ask(question) {
+        if (!question.trim()) return;
+        addMsg(question, "user");
+        chatHistory.push({ role: "user", content: question });
+        chatInput.value = "";
+        const pending = addMsg("Pensando…", "bot");
+        try {
+          const r = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: chatHistory }),
+          });
+          const d = await r.json();
+          pending.remove();
+          const answer = d.answer || d.error || "Sin respuesta";
+          const tag = d.source === "ia" ? "IA" : d.source === "reglas" ? "" : d.source;
+          addMsg(answer, "bot", tag);
+          if (d.source === "ia" || d.source === "reglas")
+            chatHistory.push({ role: "assistant", content: answer });
+          // Flujo de reparación: chips clickeables
+          if (Array.isArray(d.suggestions) && d.suggestions.length) {
+            const wrap = document.createElement("div");
+            wrap.className = "examples";
+            wrap.style.padding = "0";
+            for (const s of d.suggestions) {
+              const b = document.createElement("button");
+              b.textContent = s;
+              b.onclick = () => ask(s);
+              wrap.appendChild(b);
+            }
+            msgs.appendChild(wrap);
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+        } catch (e) {
+          pending.remove();
+          addMsg("Error: " + e.message, "bot", "error");
+        }
+      }
+
+      document.getElementById("chatSend").addEventListener("click", () => ask(chatInput.value));
+      chatInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") ask(chatInput.value);
+      });
+      document.querySelectorAll("#examples button").forEach((b) =>
+        b.addEventListener("click", () => ask(b.textContent))
+      );
+    </script>
+  </body>
+</html>
