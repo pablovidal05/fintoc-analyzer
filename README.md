@@ -28,17 +28,15 @@ Funciona **sin pagar por IA** con un motor de reglas en español. Si tienes `ANT
 | Banco de Chile | ✅ | ✅ |
 | Santander | ✅ | ✅ |
 | BancoEstado | ✅ | ✅ |
-| BCI | ✅ | ✅ |
+| BCI / BCI 360 | ✅ | ✅ |
 | Scotiabank | ✅ | ✅ |
 | Itaú | ✅ | ✅ |
 | BICE | ✅ | ✅ |
 | Banco Security | ✅ | ✅ |
-| Falabella | ✅ | ✅ |
-| Coopeuch | ✅ | ✅ |
 
 > **Modo test**: bancos simulados con datos de prueba — puedes probar todo sin conectar tu banco real.  
 > **Modo live**: tu banco real. Requiere onboarding con Fintoc (gratis, 1-2 días).  
-> Credenciales de prueba: [docs.fintoc.com/docs/test-credentials](https://docs.fintoc.com/docs/test-credentials)
+> Lista oficial y credenciales de prueba: [docs.fintoc.com](https://docs.fintoc.com/docs/products-and-institutions-movements)
 
 ---
 
