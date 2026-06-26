@@ -149,6 +149,25 @@ GET  /v1/accounts/{id}/movements   → movimientos paginados
 
 ---
 
+## Limitaciones y cosas a tener en cuenta
+
+**Fintoc modo live (banco real):**
+- Requiere onboarding con Fintoc — proceso gratuito pero tarda 1-2 días hábiles
+- El `link_token` puede expirar; si deja de funcionar, reconecta con `npm run widget`
+- No todos los bancos muestran el mismo historial — algunos dan 3 meses, otros hasta 24
+- Solo lectura: este proyecto solo baja movimientos, no mueve plata
+
+**Cobertura:**
+- Fintoc cubre Chile, México y Perú — pero este proyecto está pensado para Chile (montos en CLP, nombres de bancos y comercios chilenos)
+- No todas las cuentas del banco quedan disponibles — depende de lo que el banco exponga vía Fintoc
+
+**El coach IA:**
+- Sin `ANTHROPIC_API_KEY` el chat responde con reglas en español — entiende las preguntas más comunes pero no análisis abierto
+- Con la key activa usa `claude-opus-4-8` por defecto — tiene costo por token (muy bajo para uso personal, ~$0.01 por consulta)
+- Los movimientos se mandan al prompt de Claude como contexto — no datos en tiempo real, sino el historial cacheado localmente
+
+---
+
 ## Seguridad
 
 - `.env` y `movements.json` en `.gitignore` — keys y datos bancarios nunca se suben a git
