@@ -1,157 +1,144 @@
-# Claude como Coach Financiero con Fintoc
+# Coach Financiero con Fintoc + Claude
 
-Conecta tu banco chileno con [Fintoc](https://fintoc.com), baja tus movimientos y analízalos con un coach financiero impulsado por Claude (Anthropic).
-
-Funciona sin pagar por IA gracias a un motor de reglas en español. Si tienes `ANTHROPIC_API_KEY`, el chat se convierte en coach conversacional multi-turno con Claude.
+Conecta tu banco chileno y analiza tus gastos con IA. En 3 pasos.
 
 ```
 > cuanto gaste en supermercado en marzo
 Gastaste $48.320 en "supermercado" en marzo — 6 movimientos.
 
 Mayores:
-  2025-03-22    $12.990  SANTA ISABEL 12345
-  2025-03-15     $9.800  JUMBO ...
+  2025-03-22    $12.990  SANTA ISABEL
+  2025-03-15     $9.800  JUMBO
 ```
 
-## Lo que incluye
+---
 
-| Comando | Qué hace |
-|---|---|
-| `npm run widget` | Conecta tu banco (widget Fintoc → guarda link en `.env`) |
-| `npm run ask` | CLI de preguntas en lenguaje natural sobre tus gastos |
-| `npm start` | Resumen mensual ingresos/gastos/neto en terminal |
-| `npm run overview` | Panorama completo: saldo, ranking de comercios, meses |
-| `npm run dashboard` | Dashboard web con gráficos + chat coach en `localhost:4000` |
+## Paso 1 — Crea tu cuenta en Fintoc
 
-## Requisitos
+Ve a [fintoc.com](https://fintoc.com) y crea una cuenta gratuita.
 
-- Node.js 18+
-- Cuenta en [Fintoc](https://fintoc.com) (gratis para modo test; para producción necesitas onboarding)
-- Opcional: `ANTHROPIC_API_KEY` para activar el coach IA
+Una vez dentro, en el panel ve a **API Keys** y copia:
+- `sk_test_...` → tu Secret Key (backend)
+- `pk_test_...` → tu Public Key (widget)
 
-## Setup
+> Empieza en modo **test** — bancos simulados, sin necesidad de conectar tu banco real todavía.
 
-### 1. Instalar dependencias
+---
+
+## Paso 2 — Instala y configura
 
 ```bash
+git clone https://github.com/pablovidal05/fintoc-analyzer
+cd fintoc-analyzer
 npm install
 ```
 
-### 2. Crear `.env`
-
-Copia `.env.example` a `.env`:
+Copia el archivo de ejemplo y pega tus keys:
 
 ```bash
 cp .env.example .env
 ```
 
-Edita `.env` con tus keys de Fintoc (las sacas del [panel de Fintoc](https://app.fintoc.com)):
+Edita `.env`:
 
 ```
-FINTOC_SECRET_KEY=sk_test_xxxxxxxx   # backend
-FINTOC_PUBLIC_KEY=pk_test_xxxxxxxx   # widget frontend
+FINTOC_SECRET_KEY=sk_test_TU_KEY_AQUI
+FINTOC_PUBLIC_KEY=pk_test_TU_KEY_AQUI
 ```
 
-`sk_` y `pk_` deben ser del mismo modo (test ↔ test, live ↔ live).
+---
 
-### 3. Conectar un banco
+## Paso 3 — Conecta tu banco
 
 ```bash
 npm run widget
 ```
 
-Abre `http://localhost:4000`, haz clic en "Conectar banco" y sigue el flujo.  
-Al terminar, `FINTOC_LINK_TOKEN` y `FINTOC_ACCOUNT_ID` se guardan solos en tu `.env`.
+Abre [http://localhost:4000](http://localhost:4000), haz clic en **Conectar banco** y sigue el flujo.
 
-**Modo test**: bancos simulados con datos de prueba. Credenciales en la [documentación de Fintoc](https://docs.fintoc.com/docs/test-credentials).  
-**Modo live**: tu banco real. Requiere que Fintoc te habilite producción.
+Al terminar, el `link_token` y el `account_id` se guardan solos en tu `.env`. Listo.
 
-### 4. Hacer preguntas
+---
 
+## A jugar
+
+**Preguntas en terminal:**
 ```bash
 npm run ask
 ```
 
-Ejemplos de preguntas que entiende:
-
+Ejemplos:
 ```
 cuanto gaste en uber
 cuanto gaste en supermercado en marzo
 gastos en abril 2025
-cuanto gaste en redcompra este año
 gastos recurrentes
 en qué gasto más
 resumen de este mes
 ```
 
-Comandos especiales: `resumen` · `refresh` (re-baja desde Fintoc) · `salir`
-
-## Dashboard web (opcional)
-
+**Dashboard web con gráficos:**
 ```bash
 npm run dashboard
+# → http://localhost:4000/dashboard
 ```
 
-Abre `http://localhost:4000/dashboard`.
-
-Incluye:
-- KPIs y saldo en tiempo real
-- Filtro de fechas (presets + rango personalizado)
-- Búsqueda en lenguaje natural que filtra toda la vista
-- Gráficos por mes (Chart.js)
-- Panel "Tus hábitos" (categorías + insights empáticos)
-- Copiloto proactivo (nudges según tus patrones reales)
-- Chat lateral: motor de reglas gratis o coach IA si tienes `ANTHROPIC_API_KEY`
-
-## Activar el coach IA (opcional)
-
-Agrega al `.env`:
-
-```
-ANTHROPIC_API_KEY=sk-ant-xxxxxxxx
+**Resumen rápido en terminal:**
+```bash
+npm start          # ingresos / gastos / neto por mes
+npm run overview   # saldo + ranking de comercios + top gastos
 ```
 
-Con esta key el chat del dashboard y `npm run ask` usan Claude como coach financiero conversacional multi-turno. Sin la key, todo funciona igual con el motor de reglas.
+---
 
-Por defecto usa `claude-opus-4-8`. Cambia el modelo con:
+## Activar coach IA con Claude (opcional)
 
+Sin `ANTHROPIC_API_KEY` todo funciona con un motor de reglas gratis.
+
+Si quieres el chat conversacional con Claude, agrega al `.env`:
+
+```
+ANTHROPIC_API_KEY=sk-ant-TU_KEY_AQUI
+```
+
+Consigue tu key en [console.anthropic.com](https://console.anthropic.com).
+
+Con la key activa, el chat del dashboard y `npm run ask` usan Claude como coach financiero multi-turno — analiza tus hábitos, responde preguntas abiertas y da consejos accionables.
+
+Modelo por defecto: `claude-opus-4-8`. Cambia con:
 ```
 FINTOC_AI_MODEL=claude-haiku-4-5-20251001
 ```
 
-## Arquitectura
+---
 
-```
-ask.js            CLI de preguntas (npm run ask)
-index.js          Resumen mensual (npm start)
-overview.js       Panorama completo (npm run overview)
-server.js         Servidor web: widget + dashboard + API de chat
-lib.js            Fetch Fintoc, cache, categorización, nudges, analytics
-chatlib.js        Motor de reglas del chat (parse español, intents)
-public/
-  index.html      Widget de conexión de banco
-  dashboard.html  Dashboard web con chat
-.env.example      Plantilla de variables de entorno
-movements.json    Cache local (gitignored — datos reales)
-.env              Keys + tokens (gitignored)
-```
+## Bancos disponibles en Fintoc Chile
 
-## Cómo funciona la integración con Fintoc
+| Banco | Modo test | Modo live |
+|---|---|---|
+| Banco de Chile | ✅ | ✅ |
+| Santander | ✅ | ✅ |
+| BancoEstado | ✅ | ✅ |
+| BCI | ✅ | ✅ |
+| Scotiabank | ✅ | ✅ |
+| Itaú | ✅ | ✅ |
+| BICE | ✅ | ✅ |
+| Banco Security | ✅ | ✅ |
+| Falabella | ✅ | ✅ |
+| Coopeuch | ✅ | ✅ |
 
-```
-1. POST /v1/link_intents  → widget_token
-2. Widget Fintoc (frontend) → el usuario elige banco y se autentica
-3. GET /v1/links/exchange?exchange_token=...  → link_token + cuentas
-4. GET /v1/accounts/{id}/movements?link_token=...  → movimientos paginados
-```
+> Modo live requiere onboarding con Fintoc (gratuito para uso personal, tarda 1-2 días).  
+> Credenciales de prueba para modo test: [docs.fintoc.com/docs/test-credentials](https://docs.fintoc.com/docs/test-credentials)
 
-`amount` negativo = gasto, positivo = ingreso. Montos en CLP sin decimales.
+---
 
 ## Seguridad
 
-- `.env` y `movements.json` están en `.gitignore` — tus keys y datos nunca se suben a git.
-- `sk_` (secret key) solo en backend; nunca expongas la secret key al frontend.
-- Si una key se filtra, rótala en el panel de Fintoc inmediatamente.
+- `.env` y `movements.json` están en `.gitignore` — nunca se suben a git
+- `sk_` (secret key) solo en backend; nunca en el frontend ni en el código
+- Si una key se filtra, rótala en el panel de Fintoc de inmediato
+
+---
 
 ## Licencia
 
