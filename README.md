@@ -79,7 +79,9 @@ Consigue tu Anthropic key en [console.anthropic.com](https://console.anthropic.c
 npm run widget
 ```
 
-Abre [http://localhost:4000](http://localhost:4000) → **Conectar banco** → elige tu banco → autentícate.  
+Abre [http://localhost:4000](http://localhost:4000) → **Conectar banco** → elige tu banco → autentícate.
+
+![Widget demo](docs/widget-demo.gif)  
 El `link_token` y `account_id` se guardan solos en `.env`. Solo necesitas hacer esto una vez.
 
 ---
