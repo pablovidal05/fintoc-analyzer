@@ -48,6 +48,10 @@ Funciona **sin pagar por IA** con un motor de reglas en español. Si tienes `ANT
 
 Ve a [fintoc.com](https://fintoc.com) → crea cuenta → **API Keys** → copia tu `sk_test_...` y `pk_test_...`
 
+Así se ve el panel de Fintoc una vez que tienes tu banco conectado:
+
+![Fintoc dashboard](docs/fintoc-dashboard.png)
+
 ### 2. Instala
 
 ```bash
